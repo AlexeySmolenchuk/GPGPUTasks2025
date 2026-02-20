@@ -27,6 +27,7 @@ void sum_01_atomics(const gpu::WorkSize& workSize, const gpu::gpu_mem_32u& a, gp
 void sum_02_atomics_load_k(const gpu::WorkSize& workSize, const gpu::gpu_mem_32u& a, gpu::gpu_mem_32u& sum, unsigned int n);
 void sum_03_local_memory_atomic_per_workgroup(const gpu::WorkSize& workSize, const gpu::gpu_mem_32u& a, gpu::gpu_mem_32u& sum, unsigned int n);
 void sum_04_local_reduction(const gpu::WorkSize& workSize, const gpu::gpu_mem_32u& a, gpu::gpu_mem_32u& b, unsigned int n);
+void sum_05_full_reduce(const gpu::WorkSize& workSize, const gpu::gpu_mem_32u& a, gpu::gpu_mem_32u& b, unsigned int n);
 }
 
 namespace ocl {
