@@ -11,6 +11,11 @@
 #include <fstream>
 #include <iomanip>
 
+#define THRUST_WRAPPED_NAMESPACE course
+#include <thrust/device_vector.h>
+
+unsigned int sum_06_Thrust(::course::thrust::device_vector<unsigned int> &vec);
+
 unsigned int cpu::sum(const unsigned int* values, unsigned int n)
 {
     unsigned int sum = 0;
@@ -79,14 +84,17 @@ void run(int argc, char** argv)
     // TODO 2) сделайте замер хотя бы три раза
     // TODO 3) и выведите рассчет на основании медианного времени (в легко понятной форме - GB/s)
 
+    ::course::thrust::device_vector<unsigned int> vec(input_gpu.cuptr(), input_gpu.cuptr() + n);
+
     std::vector<std::string> algorithm_names = {
-        "CPU",
-        "CPU with OpenMP",
-        "01 atomicAdd from each workItem",
-        "02 atomicAdd but each workItem loads K values",
+        // "CPU",
+        // "CPU with OpenMP",
+        // "01 atomicAdd from each workItem",
+        // "02 atomicAdd but each workItem loads K values",
         "03 local memory and atomicAdd from master thread",
         // "04 local reduction",
-        "05 CPP Con",
+        // "05 CPP Con",
+        "06 Thrust",
     };
 
     for (size_t algorithm_index = 0; algorithm_index < algorithm_names.size(); ++algorithm_index) {
@@ -146,6 +154,9 @@ void run(int argc, char** argv)
                         sum_accum_gpu.fill(0);
                         cuda::sum_05_full_reduce(gpu::WorkSize(GROUP_SIZE, n / LOAD_K_VALUES_PER_ITEM), input_gpu, sum_accum_gpu, n);
                         sum_accum_gpu.readN(&gpu_sum, 1);
+                    } else if (algorithm == "06 Thrust") {
+                        gpu_sum = sum_06_Thrust(vec);
+
                     } else {
                         rassert(false, 652345234321, algorithm, algorithm_index);
                     }

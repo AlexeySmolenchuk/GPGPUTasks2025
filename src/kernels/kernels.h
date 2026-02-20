@@ -2,6 +2,7 @@
 
 #include <libgpu/vulkan/engine.h>
 
+
 namespace cpu {
 void mandelbrot(float* results,
                 unsigned int width, unsigned int height,
@@ -14,6 +15,7 @@ unsigned int sumOpenMP(const unsigned int *values, unsigned int n);
 }
 
 namespace cuda {
+    
 void aplusb(const gpu::WorkSize& workSize, const gpu::gpu_mem_32u& a, const gpu::gpu_mem_32u& b, gpu::gpu_mem_32u& c, unsigned int n);
 
 void mandelbrot(const gpu::WorkSize &workSize,

@@ -94,6 +94,8 @@ endforeach()
 if (GPU_CUDA_SUPPORT)
     enable_language(CUDA)
     find_package(CUDAToolkit REQUIRED)
+    find_package(Thrust REQUIRED CONFIG)
+    thrust_create_target(Thrust)
 
     # Компиляция CUDA происходит NVCC компилятором, все файлы с расширением .cu компилируются два раза:
     # 1) один раз обычным компилятором - для HOST-side кода, компилируются только те функции которые не помечены специально что они для видеокарты (или помечены что они и для видеокарты и для HOST-side кода)
@@ -105,11 +107,12 @@ if (GPU_CUDA_SUPPORT)
             src/kernels/cu/sum_02_atomics_load_k.cu
             src/kernels/cu/sum_03_local_memory_atomic_per_workgroup.cu
             src/kernels/cu/sum_04_local_reduction.cu
-            src/kernels/cu/sum_05_full_reduce.cu)
+            src/kernels/cu/sum_05_full_reduce.cu
+            src/kernels/cu/sum_06_Thrust.cu)
 
     add_definitions(-DCUDA_SUPPORT)
     add_library(${PROJECT_NAME}_core STATIC ${SOURCES} ${CUDA_SOURCES} ${HEADERS})
-    target_link_libraries(${PROJECT_NAME}_core ${LIBRARIES})
+    target_link_libraries(${PROJECT_NAME}_core ${LIBRARIES} Thrust)
     target_include_directories(${PROJECT_NAME}_core PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 else ()
     add_library(${PROJECT_NAME}_core STATIC ${SOURCES} ${HEADERS})
