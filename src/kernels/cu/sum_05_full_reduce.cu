@@ -26,11 +26,11 @@ __global__ void sum_05_full_reduce(
         sum += a[i];
         // sum += __ldg(a+i);
     }
-    sum += __shfl_down(sum, 16);
-    sum += __shfl_down(sum, 8);
-    sum += __shfl_down(sum, 4);
-    sum += __shfl_down(sum, 2);
-    sum += __shfl_down(sum, 1);
+    sum += __shfl_down_sync(0xffffffff, sum, 16);
+    sum += __shfl_down_sync(0xffffffff, sum, 8);
+    sum += __shfl_down_sync(0xffffffff, sum, 4);
+    sum += __shfl_down_sync(0xffffffff, sum, 2);
+    sum += __shfl_down_sync(0xffffffff, sum, 1);
 
     __shared__ int shared_sum;
     shared_sum = 0;
