@@ -17,25 +17,23 @@ __global__ void matrix_transpose_coalesced_via_local_memory(
     const unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
     const unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
     const unsigned int idx = x + w * y;
+    const unsigned int i = threadIdx.x + threadIdx.y * GROUP_SIZE_Y;
     
-    // naive
-    // const unsigned int idxi = x * h + y;
-    // transposed_matrix[idxi] = matrix[idx];
-    // return;
-
-
     const unsigned int xi = blockIdx.y * blockDim.y + threadIdx.x;
     const unsigned int yi = blockIdx.x * blockDim.x + threadIdx.y;
+    
+    // const unsigned int idxi = xi + h * yi;
+    // const unsigned int ii = threadIdx.y + threadIdx.x * GROUP_SIZE_X;
+
+    const int shift = (threadIdx.y + threadIdx.x) < 16 ? threadIdx.y : threadIdx.y - 16;
+    const unsigned int idxi = xi + shift + h * yi;
+    const unsigned int ii = threadIdx.y + (threadIdx.x + shift) * GROUP_SIZE_X;
 
     __shared__ float local_data[GROUP_SIZE_X*GROUP_SIZE_Y];
 
-    const unsigned int idxi = xi + h * yi;
-
-    local_data[threadIdx.x + threadIdx.y * GROUP_SIZE_Y] = matrix[idx];
-
+    local_data[i] = matrix[idx];
     __syncthreads();
-    
-    transposed_matrix[idxi] = local_data[threadIdx.y + threadIdx.x * blockDim.y];
+    transposed_matrix[idxi] = local_data[ii];
 }
 
 
