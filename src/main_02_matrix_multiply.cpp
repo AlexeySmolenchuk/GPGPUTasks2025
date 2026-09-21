@@ -96,21 +96,9 @@ void run(int argc, char** argv)
         "CPU with OpenMP",
         "01 naive",
         "02 using local memory",
+        "03 using WMMA (Tensor Cores)",
+        "04 using cuBLAS"
     };
-
-    // TODO 020 Это добровольное задание за супер-пупер-баллы престижа сверх нормы
-    bool I_Want_Super_Puper_Prestige_Points = false;
-    if (I_Want_Super_Puper_Prestige_Points) {
-        if (context.type() == gpu::Context::TypeCUDA) {
-            algorithm_names.push_back("03 using WMMA (Tensor Cores) [+Prestige Points]");
-        }
-        if (context.type() == gpu::Context::TypeVulkan) {
-            rassert(context.vk()->device().supportsExtension("VK_KHR_cooperative_matrix"), 32452365324632);
-            auto device_supported_cooperative_matrix_sizes = context.vk()->device().supportedCooperativeMatrixSizes();
-            rassert(context.vk()->device().isCooperativeMatrixSizeSupported(DataType16f, DataType32f, 16, 16, 16), 235243524356);
-            algorithm_names.push_back("03 using cooperative matrix [+Prestige Points]");
-        }
-    }
 
     for (size_t algorithm_index = 0; algorithm_index < algorithm_names.size(); ++algorithm_index) {
         const std::string& algorithm = algorithm_names[algorithm_index];
@@ -141,8 +129,10 @@ void run(int argc, char** argv)
                         cuda::matrix_multiply_naive(gpu::WorkSize(GROUP_SIZE, 1, w, h), matrix_a_gpu, matrix_b_gpu, matrix_c_gpu, w, h, k);
                     } else if (algorithm == "02 using local memory") {
                         cuda::matrix_multiply_via_local_memory(gpu::WorkSize(GROUP_SIZE_X, GROUP_SIZE_Y, w, h), matrix_a_gpu, matrix_b_gpu, matrix_c_gpu, w, h, k);
-                    } else if (algorithm == "03 using WMMA (Tensor Cores) [+Prestige Points]") {
+                    } else if (algorithm == "03 using WMMA (Tensor Cores)") {
                         cuda::matrix_multiply_wmma(gpu::WorkSize(16, 2, w, h * 2 / 16), matrix_a_gpu, matrix_b_gpu, matrix_c_gpu, w, h, k);
+                    } else if (algorithm == "04 using cuBLAS") {
+                        cuda::matrix_multiply_cuBLAS(matrix_a_gpu, matrix_b_gpu, matrix_c_gpu, w, h, k);
                     } else {
                         rassert(false, 652345234321, algorithm, algorithm_index);
                     }

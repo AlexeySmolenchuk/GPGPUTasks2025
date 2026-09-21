@@ -108,7 +108,7 @@ if (GPU_CUDA_SUPPORT)
 
     add_definitions(-DCUDA_SUPPORT)
     add_library(${PROJECT_NAME}_core STATIC ${SOURCES} ${CUDA_SOURCES} ${HEADERS})
-    target_link_libraries(${PROJECT_NAME}_core ${LIBRARIES})
+    target_link_libraries(${PROJECT_NAME}_core ${LIBRARIES} CUDA::cublas)
     target_include_directories(${PROJECT_NAME}_core PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 else ()
     add_library(${PROJECT_NAME}_core STATIC ${SOURCES} ${HEADERS})

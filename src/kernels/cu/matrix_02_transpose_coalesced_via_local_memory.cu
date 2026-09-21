@@ -14,25 +14,35 @@ __global__ void matrix_transpose_coalesced_via_local_memory(
                              unsigned int w,
                              unsigned int h)
 {
+    constexpr bool fix = 1;
+
+    // add extra elements to avoid bank conflicts 
+    __shared__ float local_data[GROUP_SIZE_X * GROUP_SIZE_Y + 32*fix];
+    
+    // indexes
     const unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
     const unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
-    const unsigned int idx = x + w * y;
-    const unsigned int i = threadIdx.x + threadIdx.y * GROUP_SIZE_Y;
     
+    // linear index in incoming array
+    const unsigned int idx = x + w * y;
+
+    // index within 16x16 cache
+    const unsigned int i = threadIdx.x + threadIdx.y * GROUP_SIZE_Y;
+
+    // write with offsets to avoid bank conflicts 
+    local_data[i + (threadIdx.y/2)*2*fix] = matrix[idx];
+    __syncthreads();
+
+    // transposed indexes
     const unsigned int xi = blockIdx.y * blockDim.y + threadIdx.x;
     const unsigned int yi = blockIdx.x * blockDim.x + threadIdx.y;
     
-    // const unsigned int idxi = xi + h * yi;
-    // const unsigned int ii = threadIdx.y + threadIdx.x * GROUP_SIZE_X;
+    // transposed linear index in incoming array
+    const unsigned int idxi = xi + h * yi;
 
-    const int shift = (threadIdx.y + threadIdx.x) < 16 ? threadIdx.y : threadIdx.y - 16;
-    const unsigned int idxi = xi + shift + h * yi;
-    const unsigned int ii = threadIdx.y + (threadIdx.x + shift) * GROUP_SIZE_X;
+    // transposed index within 16x16 cache with applied offset
+    const unsigned int ii = threadIdx.y + (threadIdx.x) * GROUP_SIZE_X  + (threadIdx.x/2)*2*fix;
 
-    __shared__ float local_data[GROUP_SIZE_X*GROUP_SIZE_Y];
-
-    local_data[i] = matrix[idx];
-    __syncthreads();
     transposed_matrix[idxi] = local_data[ii];
 }
 
@@ -98,11 +108,17 @@ void matrix_transpose_coalesced_via_local_memory(const gpu::WorkSize &workSize,
     gpu::Context context;
     rassert(context.type() == gpu::Context::TypeCUDA, 34523543124312, context.type());
     cudaStream_t stream = context.cudaStream();
-    ::matrix_transpose_coalesced_via_local_memory<<<workSize.cuGridSize(), workSize.cuBlockSize(), 0, stream>>>(matrix.cuptr(), transposed_matrix.cuptr(), w, h);
 
-    // ::transposeCoalesced<<<workSize.cuGridSize(), workSize.cuBlockSize(), 0, stream>>>( transposed_matrix.cuptr(), matrix.cuptr(), w, h );
-    // ::transposeNoBankConflicts<<<workSize.cuGridSize(), workSize.cuBlockSize(), 0, stream>>>( transposed_matrix.cuptr(), matrix.cuptr(), w, h );
-    
+#if 1
+    ::matrix_transpose_coalesced_via_local_memory<<<workSize.cuGridSize(), workSize.cuBlockSize(), 0, stream>>>(matrix.cuptr(), transposed_matrix.cuptr(), w, h);
+#else
+
+    // Override worksize for this examples
+    gpu::WorkSize ws(32, 8, w, h/4);
+
+    // ::transposeCoalesced<<<ws.cuGridSize(), ws.cuBlockSize(), 0, stream>>>( transposed_matrix.cuptr(), matrix.cuptr(), w, h );
+    ::transposeNoBankConflicts<<<ws.cuGridSize(), ws.cuBlockSize(), 0, stream>>>( transposed_matrix.cuptr(), matrix.cuptr(), w, h );
+#endif
     CUDA_CHECK_KERNEL(stream);
 }
 
